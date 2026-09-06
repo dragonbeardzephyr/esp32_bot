@@ -46,9 +46,11 @@ unsigned long armUpTime = 0;
 
 
 
+
+
 void laserOn() {digitalWrite(LASER_PIN, HIGH);}
 
-void laserOf() {digitalWrite(LASER_PIN, LOW);}
+void laserOff() {digitalWrite(LASER_PIN, LOW);}
 
 
 int measureDistance() {
@@ -72,9 +74,7 @@ int measureDistance() {
 
 
 
-
 void driveMotors(int leftSpeed, int rightSpeed) {
-
   if (leftSpeed > 0) {
     analogWrite(MOTOR_LEFT_IN1, constrain(leftSpeed, 0, 255));
     analogWrite(MOTOR_LEFT_IN2, 0);
@@ -86,7 +86,6 @@ void driveMotors(int leftSpeed, int rightSpeed) {
     analogWrite(MOTOR_LEFT_IN2, 0);
   }
 
-  // Right Motor
   if (rightSpeed > 0) {
     analogWrite(MOTOR_RIGHT_IN3, constrain(rightSpeed, 0, 255));
     analogWrite(MOTOR_RIGHT_IN4, 0);
@@ -106,9 +105,6 @@ void setup() {
   Wire.begin(21, 22);
   Wire.setClock(50000);
 
-  //while (!Serial)
-  //  delay(10);
-
   delay(150);
 
   // Send wake-up byte to power management register (0x6B = 0)
@@ -121,7 +117,7 @@ void setup() {
   Serial.println(wakeErr);
   delay(50);
 
-  if (mpu.begin(0x68, &Wire)) {
+  if (mpu.begin(0x68, &Wire)) { //some funny stuff here
     Serial.println("MPU6050 Initialized successfully!");
     mpu.setAccelerometerRange(MPU6050_RANGE_4_G);
     mpu.setGyroRange(MPU6050_RANGE_500_DEG);
@@ -131,8 +127,9 @@ void setup() {
     Serial.println("ERROR: mpu.begin() returned false!");
   }
   
-
   Serial.println("Adafruit MPU6050 test!");
+
+
 
   ESP32PWM::allocateTimer(0);
   ESP32PWM::allocateTimer(1);
@@ -156,7 +153,7 @@ void setup() {
 
   pinMode(LASER_PIN, OUTPUT);
 
-  laserOn();
+  laserOn(); // for testing rn
 
 
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
@@ -166,7 +163,6 @@ void setup() {
     display.setTextColor(SSD1306_WHITE);
     display.clearDisplay();
   }
-
 
   display.setTextColor(SSD1306_WHITE);
   display.clearDisplay();
@@ -203,22 +199,30 @@ void loop() {
     Serial.print(temp.temperature, 1);
     Serial.print(" °C");
 
-    //Serial.print("] | Gyro (deg/s) [Z: ");
-    //Serial.print(g.gyro.z * 57.2958, 1); // converted to deg/sec for yaw/turning
+    // INclude gyro values later
     Serial.print("]");
+
+    display.setCursor(0, 20);
+
+    display.println(a.acceleration.x);
+    display.println(a.acceleration.y);
+    display.println(a.acceleration.z);
+
+    display.print(temp.temperature);
+    display.println(" C");
+
+  } else {
+    Serial.println("MPU is OFFLINE!");
+    display.setCursor(0, 20);
+    display.println("MPU: OFFLINE");
   }
 
   Serial.println();
 
-
   display.display();
 
-  //driveMotors(constrain(face_distance, -255, 255), constrain(face_distance, -255, 255));
-
-  driveMotors(200, 200);
-
   // Sonar Sensor workings
-  if (face_distance > 0 && face_distance <= 150) {
+  if (face_distance > 0 && face_distance <= 150) { // Point laser at object close to bot
     laserOn();
 
     //tone(SPEAKER_PIN, face_distance*10, 200);
@@ -232,7 +236,8 @@ void loop() {
     Serial.println(zeroAngle - angleDiff);
 
   } 
-  else if (face_distance > 150 && face_distance <= 250) {
+
+  else if (face_distance > 150 && face_distance <= 250) { // At further distance gaps alllow bot to simulate look up and around
 
     int newAngle = angle + (7 - (esp_random() % 12)); // -5 to 5
 
@@ -250,27 +255,35 @@ void loop() {
     Serial.println(angle);
 
   }
-  else {
+
+  else { // if too close or too far return to neutral for now
     noTone(SPEAKER_PIN);
     angle = zeroAngle;
-    laserOn();
+    laserOff();
   }
 
 
   // IR Sensor Workings
+  // prevent bot from walkign over
+  // combine wiht sonar to detect inclines and delcines later on
 
 
   // Accelerometer Sensing
+  // free fall
+  // getting picked up
+  // 
+
+
 
   // 
 
 
   angle = constrain(angle, 35, 180);
   headServo.write(angle);  // Look left
+
+  driveMotors(255, 255); // full sppeed for initial tests
+
   
-
-
-   
 }
 
 
@@ -527,8 +540,7 @@ void testscrolltext(void) {
 
 
 
-
-const unsigned char epd_bitmap_Bitmap [] PROGMEM = //mimikyu
+const unsigned char epd_bitmap_Bitmap [] PROGMEM = //mimikyu bitmap
 {
 	// 'mimikyu', 96x96px
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
