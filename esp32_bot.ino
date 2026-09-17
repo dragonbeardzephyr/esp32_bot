@@ -18,10 +18,16 @@ Adafruit_MPU6050 mpu;
 bool mpuOnline = false;
 
 #define SERVO_PIN 13
+
 #define TRIG_PIN 18
 #define ECHO_PIN 19
+
 #define SPEAKER_PIN 27
+
 #define LASER_PIN 25
+
+//#define LEFT_IR_PIN 
+//#define RIGHT_IR_PIN 
 
 #define MOTOR_LEFT_IN1    26   // Left Motor FWD
 #define MOTOR_LEFT_IN2    14   // Left Motor REV
@@ -61,7 +67,9 @@ int measureDistance() {
   delayMicroseconds(10);
   digitalWrite(TRIG_PIN, LOW);
   
-  long duration = pulseIn(ECHO_PIN, HIGH, 15000); // 2.5 metre range
+  //long duration = pulseIn(ECHO_PIN, HIGH, 15000); // 2.5 metre range
+
+  long duration = pulseIn(ECHO_PIN, HIGH, 35000); // 2.5 metre range
   
   if (duration == 0) {
     distance = -1;
@@ -180,6 +188,9 @@ void loop() {
   display.setTextSize(1);
 
   face_distance = measureDistance();
+
+  Serial.print(face_distance);
+  Serial.println(" cm");
 
   display.print(face_distance);
   display.println(" cm");
